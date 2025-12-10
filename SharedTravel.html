@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>共享出行平台</title>
+
+    <style>
+        /* ========== 全局样式 & CSS变量 ========== */
+        :root {
+            --primary-color: #4A90E2;
+            --primary-dark: #357ABD;
+            --success-color: #52c41a;
+            --warning-color: #faad14;
+            --danger-color: #f5222d;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c7d;
+            --bg-light: #f5f7fa;
+            --bg-white: #ffffff;
+            --shadow-light: 0 2px 12px rgba(0,0,0,0.08);
+            --shadow-medium: 0 4px 20px rgba(0,0,0,0.12);
+            --shadow-heavy: 0 8px 32px rgba(0,0,0,0.16);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-light);
+            overflow-x: hidden;
+            color: var(--text-primary);
+        }
+
+        /* ========== 页面容器 ========== */
+        .page {
+            display: none;
+            min-height: 100vh;
+            background: var(--bg-white);
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== 顶部导航栏 ========== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: var(--shadow-light);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .navbar .back-btn {
+            position: absolute;
+            left: 12px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            transition: var(--transition);
+        }
+
+        .navbar .back-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        /* ========== 底部导航 ========== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: rgba(255,255,255,0.95);
+            border-top: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .bottom-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary-color);
+            transform: translateY(-4px);
+        }
+
+        .bottom-nav-item .icon {
+            font-size: 22px;
+            margin-bottom: 2px;
+            transition: var(--transition);
+        }
+
+        .bottom-nav-item.active .icon {
+            transform: scale(1.15);
+        }
+
+        /* ========== 登录页 ========== */
+        .login-page {
+            background: linear-gradient(135deg, #6a93cb 0%, #a4bfef 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .login-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGZpbGw9IiNGRkYiIGZpbGwtb3BhY2l0eT0iMC4wNSIgZD0iTTAgMGg0MDB2NDAwSDB6Ii8+PGNpcmNsZSBmaWxsPSIjRkZGIiBmaWxsLW9wYWNpdHk9IjAuMSIgY3g9IjcwIiBjeT0iNzAiIHI9IjQwIi8+PGNpcmNsZSBmaWxsPSIjRkZGIiBmaWxsLW9wYWNpdHk9IjAuMSIgY3g9IjMzMCIgY3k9IjMwMCIgcj0iNjAiLz48Y2lyY2xlIGZpbGw9IiNGRkYiIGZpbGwtb3BhY2l0eT0iMC4wOCIgY3g9IjMwMCIgY3k9IjEwMCIgcj0iMzUiLz48L2c+PC9zdmc+');
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .login-content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 340px;
+        }
+
+        .login-logo {
+            font-size: 64px;
+            color: white;
+            margin-bottom: 16px;
+            text-align: center;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .login-title {
+            font-size: 28px;
+            color: white;
+            margin-bottom: 40px;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .login-form {
+            background: rgba(255,255,255,0.95);
+            padding: 32px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-medium);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group input {
+            width: 100%;
+            height: 48px;
+            padding: 0 16px;
+            border: 1px solid #e1e8ed;
+            border-radius: 24px;
+            font-size: 15px;
+            background: white;
+            transition: var(--transition);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            height: 48px;
+            border: none;
+            border-radius: 24px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-light);
+            margin-top: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            height: 48px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 24px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: var(--transition);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.25);
+            border-color: rgba(255,255,255,0.8);
+        }
+
+        .btn-code {
+            width: 100%;
+            height: 44px;
+            border: 1px solid var(--primary-color);
+            border-radius: 22px;
+            background: white;
+            color: var(--primary-color);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: var(--transition);
+        }
+
+        .btn-code:hover:not(:disabled) {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-code:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #f5f5f5;
+            border-color: #ddd;
+            color: #999;
+        }
+
+        /* ========== 地图首页========== */
+        .map-leaflet {
+            position: relative;
+            height: 100vh;
+            background: #e8eaed;
+        }
+
+        .map-view {
+            width: 100%;
+            height: calc(100% - 56px);
+            position: relative;
+            overflow: hidden;
+        }
+        .map-container {
+            position: relative;
+            height: calc(100vh - 56px);
+            z-index: 1;
+        }
+        #leaflet-map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .location-btn {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-medium);
+            cursor: pointer;
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .location-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .scan-btn {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            box-shadow: var(--shadow-heavy);
+            cursor: pointer;
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .scan-btn:hover {
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        .scan-btn:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        /* ========== 实名认证页 ========== */
+        .auth-page {
+            background: var(--bg-light);
+            padding: 60px 20px 20px;
+        }
+
+        .auth-steps {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 20px;
+            padding: 0 20px;
+        }
+
+        .auth-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .auth-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+
+        .auth-step.active::after {
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+            transition: var(--transition);
+        }
+
+        .auth-step.active .step-number {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+
+        .auth-step div:last-child {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .auth-step.active div:last-child {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .auth-form {
+            background: white;
+            margin: 0 20px;
+            padding: 32px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+        }
+
+        .id-card-uploader {
+            border: 2px dashed #d0d7e3;
+            border-radius: var(--border-radius);
+            padding: 48px 20px;
+            text-align: center;
+            margin-bottom: 32px;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #fafbfc;
+        }
+
+        .id-card-uploader:hover {
+            border-color: var(--primary-color);
+            background: rgba(74, 144, 226, 0.05);
+        }
+
+        /* ========== 骑行中页面 ========== */
+        .riding-page {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 80px 20px 40px;
+            min-height: 100vh;
+        }
+
+        .riding-status {
+            color: white;
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .riding-time {
+            color: white;
+            font-size: 56px;
+            font-weight: 300;
+            margin-bottom: 8px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .riding-fee {
+            color: rgba(255,255,255,0.9);
+            font-size: 40px;
+            margin-bottom: 60px;
+            font-weight: 500;
+        }
+
+        .riding-actions {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 40px;
+        }
+
+        .riding-btn {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .riding-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-4px);
+        }
+
+        .riding-btn.danger {
+            border-color: rgba(255,107,107,0.5);
+            background: rgba(255,107,107,0.15);
+        }
+
+        .riding-btn.danger:hover {
+            background: rgba(255,107,107,0.3);
+            transform: translateY(-4px) scale(1.05);
+        }
+
+        /* ========== 个人中心 ========== */
+        .profile-page {
+            padding: 60px 20px 80px;
+            background: var(--bg-light);
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            padding: 40px 20px;
+            text-align: center;
+            color: white;
+            border-radius: var(--border-radius);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .profile-avatar {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: var(--primary-color);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .profile-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        .credit-score {
+            display: inline-block;
+            padding: 6px 18px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            margin-top: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(5px);
+        }
+
+        .menu-list {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-light);
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 18px 24px;
+            border-bottom: 1px solid #f5f7fa;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .menu-item:hover {
+            background: #f8fafd;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .menu-text {
+            flex: 1;
+            font-size: 15px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .menu-arrow {
+            color: #bdc3c7;
+            font-size: 18px;
+        }
+
+        /* ========== 扫描模态框 ========== */
+        .scan-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .scan-modal.active {
+            display: flex;
+        }
+
+        .scan-frame {
+            width: 280px;
+            height: 280px;
+            border: 2px solid var(--primary-color);
+            border-radius: 16px;
+            position: relative;
+            box-shadow: 0 0 40px rgba(74, 144, 226, 0.3);
+        }
+
+        .scan-frame::before,
+        .scan-frame::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border: 4px solid var(--primary-color);
+        }
+
+        .scan-frame::before {
+            top: -4px;
+            left: -4px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .scan-frame::after {
+            bottom: -4px;
+            right: -4px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .scan-tip {
+            position: absolute;
+            bottom: 120px;
+            color: white;
+            font-size: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .close-scan {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            border: 2px solid white;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .close-scan:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* ========== 加载动画 ========== */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3000;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 56px;
+            height: 56px;
+            border: 4px solid rgba(74, 144, 226, 0.2);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ========== 提示消息 ========== */
+        .toast {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 4000;
+            opacity: 0;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* ========== 地图自定义样式覆盖 ========== */
+        .leaflet-control-container {
+            display: none; /* 隐藏默认控件 */
+        }
+
+        .custom-marker {
+            background: white;
+            border-radius: 50%;
+            box-shadow: var(--shadow-medium);
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .custom-marker:hover {
+            transform: scale(1.15);
+            z-index: 1000;
+        }
+
+        .custom-marker.bicycle {
+            background: var(--success-color);
+        }
+
+        .custom-marker.ebike {
+            background: var(--warning-color);
+        }
+
+        .custom-marker.car {
+            background: var(--danger-color);
+        }
+
+        /* ========== 响应式设计 ========== */
+        @media (max-width: 375px) {
+            .login-form {
+                padding: 24px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<!-- ==================== SVG图标库 ==================== -->
+<svg style="display: none;">
+    <!-- 自行车图标 -->
+    <symbol id="icon-bike" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M5,20.5A3.5,3.5 0 0,1 1.5,17A3.5,3.5 0 0,1 5,13.5A3.5,3.5 0 0,1 8.5,17A3.5,3.5 0 0,1 5,20.5M5,12A5,5 0 0,0 0,17A5,5 0 0,0 5,22A5,5 0 0,0 10,17A5,5 0 0,0 5,12M14.8,10H19V8.2H15.8L13.86,4.93C13.57,4.43 13,4.1 12.4,4.1C11.93,4.1 11.5,4.29 11.2,4.6L7.5,8.29C7.19,8.6 7,9 7,9.5C7,10.13 7.33,10.66 7.85,10.97L11.2,13V18H13V11.5L10.75,9.85L13.07,7.5M19,20.5A3.5,3.5 0 0,1 15.5,17A3.5,3.5 0 0,1 19,13.5A3.5,3.5 0 0,1 22.5,17A3.5,3.5 0 0,1 19,20.5M19,12A5,5 0 0,0 14,17A5,5 0 0,0 19,22A5,5 0 0,0 24,17A5,5 0 0,0 19,12M16,4.8C17,4.8 17.8,4 17.8,3C17.8,2 17,1.2 16,1.2C15,1.2 14.2,2 14.2,3C14.2,4 15,4.8 16,4.8Z"/>
+    </symbol>
+
+    <!-- 电动车图标 -->
+    <symbol id="icon-ebike" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M19,7V4H5V7H19M8,9A3,3 0 0,0 5,12A3,3 0 0,0 8,15A3,3 0 0,0 11,12A3,3 0 0,0 8,9M16,9A3,3 0 0,0 13,12A3,3 0 0,0 16,15A3,3 0 0,0 19,12A3,3 0 0,0 16,9M8,17A5,5 0 0,0 3,22A5,5 0 0,0 8,27A5,5 0 0,0 13,22A5,5 0 0,0 8,17M16,17A5,5 0 0,0 11,22A5,5 0 0,0 16,27A5,5 0 0,0 21,22A5,5 0 0,0 16,17M8,2A2,2 0 0,0 6,4A2,2 0 0,0 8,6A2,2 0 0,0 10,4A2,2 0 0,0 8,2M16,2A2,2 0 0,0 14,4A2,2 0 0,0 16,6A2,2 0 0,0 18,4A2,2 0 0,0 16,2M9,4H15V7H9V4M3,5H5V20H3V5M19,9V14H5V9H19Z"/>
+    </symbol>
+
+    <!-- 汽车图标 -->
+    <symbol id="icon-car" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M5,11L6.5,6.5H17.5L19,11M17.5,16A1.5,1.5 0 0,1 16,14.5A1.5,1.5 0 0,1 17.5,13A1.5,1.5 0 0,1 19,14.5A1.5,1.5 0 0,1 17.5,16M6.5,16A1.5,1.5 0 0,1 5,14.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 8,14.5A1.5,1.5 0 0,1 6.5,16M18.92,6C18.72,5.42 18.16,5 17.5,5H6.5C5.84,5 5.28,5.42 5.08,6L3,12V20A1,1 0 0,0 4,21H5A1,1 0 0,0 6,20V19H18V20A1,1 0 0,0 19,21H20A1,1 0 0,0 21,20V12L18.92,6M17.85,12.5C17.85,12.77 17.62,13 17.35,13H6.5C6.23,13 6,12.77 6,12.5V7.5H17.85V12.5Z"/>
+    </symbol>
+
+    <!-- 定位图标 -->
+    <symbol id="icon-location" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22S19,14.25 19,9A7,7 0 0,0 12,2Z"/>
+    </symbol>
+
+    <!-- 相机图标 -->
+    <symbol id="icon-camera" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M12,15.5A3.5,3.5 0 0,0 15.5,12A3.5,3.5 0 0,0 12,8.5A3.5,3.5 0 0,0 8.5,12A3.5,3.5 0 0,0 12,15.5M9,2L7.17,4H4A2,2 0 0,0 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6A2,2 0 0,0 20,4H16.83L15,2H9Z"/>
+    </symbol>
+</svg>
+
+<!-- ==================== 页面容器 ==================== -->
+<div id="app">
+    <!-- 登录页 -->
+    <div class="page login-page" id="loginPage">
+        <div class="login-content">
+            <div class="login-logo">🚲</div>
+            <div class="login-title">共享出行</div>
+            <div class="login-form">
+                <div class="input-group">
+                    <input type="tel" id="phoneInput" placeholder="请输入手机号" maxlength="11">
+                </div>
+                <div class="input-group">
+                    <input type="text" id="codeInput" placeholder="请输入验证码">
+                </div>
+                <button class="btn-code" id="getCodeBtn">获取验证码</button>
+                <button class="btn-primary" onclick="login()">登录/注册</button>
+                <button class="btn-secondary" onclick="wechatLogin()">微信一键登录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 地图首页  -->
+    <!-- 地图首页 -->
+    <div class="page" id="mapPage">
+        <div class="navbar">
+            <div class="back-btn" onclick="goToProfile()">...</div>
+            <div>共享出行</div>
+            <div class="menu-btn" onclick="goToProfile()">...</div>
+        </div>
+
+        <!-- 地图容器 -->
+        <div class="map-container">
+            <div class="map-view" id="mapView">
+                <div id="leaflet-map"></div>
+            </div>
+            <div class="location-btn" onclick="locateMe()">...</div>
+            <div class="scan-btn" onclick="openScan()">...</div>
+        </div>
+
+        <!-- ✅ 添加底部导航栏 -->
+        <div class="bottom-nav">
+            <div class="bottom-nav-item active" data-target="map">
+                <div class="icon">🗺️</div>
+                <div>地图</div>
+            </div>
+            <div class="bottom-nav-item" data-target="profile">
+                <div class="icon">👤</div>
+                <div>我的</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 实名认证页 -->
+    <div class="page auth-page" id="authPage">
+        <div class="navbar">
+            <div class="back-btn" onclick="backToMap()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
+                </svg>
+            </div>
+            <div>实名认证</div>
+        </div>
+        <div class="auth-steps">
+            <div class="auth-step active">
+                <div class="step-number">1</div>
+                <div>身份证</div>
+            </div>
+            <div class="auth-step">
+                <div class="step-number">2</div>
+                <div>活体检测</div>
+            </div>
+            <div class="auth-step">
+                <div class="step-number">3</div>
+                <div>完成</div>
+            </div>
+        </div>
+        <div class="auth-form">
+            <div class="id-card-uploader" onclick="uploadIdCard()">
+                <div style="font-size: 56px; margin-bottom: 12px; color: var(--primary-color);">📷</div>
+                <div style="color: var(--text-secondary); font-weight: 500;">点击拍摄身份证人像面</div>
+            </div>
+            <button class="btn-primary" onclick="startFaceVerify()">开始人脸识别</button>
+        </div>
+    </div>
+
+    <!-- 骑行中页面 -->
+    <div class="page riding-page" id="ridingPage">
+        <div class="riding-status">骑行中</div>
+        <div class="riding-time" id="ridingTime">00:00</div>
+        <div class="riding-fee" id="ridingFee">¥0.00</div>
+        <div class="riding-actions">
+            <div class="riding-btn" onclick="tempLock()">
+                <div style="font-size: 24px; margin-bottom: 4px;">🔒</div>
+                <div>临时锁车</div>
+            </div>
+            <div class="riding-btn danger" onclick="finishRide()">
+                <div style="font-size: 24px; margin-bottom: 4px;">🏁</div>
+                <div>结束骑行</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 个人中心 -->
+    <div class="page profile-page" id="profilePage">
+        <div class="navbar">
+            <div class="back-btn" onclick="backToMap()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
+                </svg>
+            </div>
+            <div>个人中心</div>
+        </div>
+        <div class="profile-header">
+            <div class="profile-avatar">👤</div>
+            <div id="userName">用户138****5678</div>
+            <div class="credit-score">信用分: <span id="creditScore">600</span></div>
+            <!-- 新增：押金状态 -->
+            <div class="deposit-status" id="depositStatus" style="margin-top: 8px; font-size: 13px; opacity: 0.9;">
+                押金状态: <span id="depositStatusText">未缴纳</span>
+            </div>
+        </div>
+        <div class="menu-list">
+            <div class="menu-item" onclick="goToOrders()">
+                <div class="menu-icon">📋</div>
+                <div class="menu-text">我的行程</div>
+                <div class="menu-arrow">›</div>
+            </div>
+            <div class="menu-item" onclick="goToCoupons()">
+                <div class="menu-icon">🎫</div>
+                <div class="menu-text">优惠券</div>
+                <div class="menu-arrow">›</div>
+            </div>
+            <div class="menu-item" onclick="goToWallet()">
+                <div class="menu-icon">💰</div>
+                <div class="menu-text">钱包余额</div>
+                <div class="menu-arrow">›</div>
+            </div>
+            <div class="menu-item" onclick="goToCredit()">
+                <div class="menu-icon">⭐</div>
+                <div class="menu-text">信用分</div>
+                <div class="menu-arrow">›</div>
+            </div>
+            <div class="menu-item" onclick="goToDeposit()">
+                <div class="menu-icon">💳</div>
+                <div class="menu-text">押金管理</div>
+                <div class="menu-arrow">›</div>
+            </div>
+            <div class="menu-item" onclick="logout()">
+                <div class="menu-icon">🚪</div>
+                <div class="menu-text">退出登录</div>
+                <div class="menu-arrow">›</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 二维码扫描模态框 -->
+    <div class="scan-modal" id="scanModal">
+        <div class="close-scan" onclick="closeScan()">×</div>
+        <div class="scan-frame"></div>
+        <div class="scan-tip">将二维码放入框内，即可扫描</div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+</div>
+
+
+
+<!-- ==================== 所有JavaScript代码（统一在一个块中） ==================== -->
+<script>
+    // ==================== 全局状态管理 ====================
+    const USER_STATUS = {
+        NORMAL: 0,      // 正常
+        FROZEN: 1,      // 冻结（信用<500）
+        BLACKLIST: 2    // 黑名单（信用<400）
+    };
+
+    const VEHICLE_TYPE = {
+        BICYCLE: 1,     // 自行车
+        EBike: 2,       // 电动车
+        CAR: 3          // 小汽车
+    };
+
+    const VEHICLE_STATUS = {
+        NORMAL: 0,      // 正常
+        FAULT: 1,       // 故障
+        REPAIR: 2,      // 维修中
+        SCRAP: 3        // 报废
+    };
+
+    const ORDER_STATUS = {
+        RESERVED: 0,    // 预约
+        RIDING: 1,      // 骑行中
+        RETURNED: 2,    // 已还车
+        PAID: 3,        // 已支付
+        COMPLETED: 4    // 已完成
+    };
+
+    const VIOLATION_TYPE = {
+        ILLEGAL_PARK: 1,    // 违停
+        DAMAGE: 2,          // 破坏
+        PRIVATE_OCCUPY: 3   // 私占
+    };
+
+    const DEPOSIT_STATUS = {
+        UNPAID: 0,      // 未缴
+        PAID: 1,        // 已缴
+        REFUNDED: 2     // 已退
+    };
+    const AppState = {
+        user: {
+            userId: null, phone: null, creditScore: 600,
+            depositStatus: DEPOSIT_STATUS.UNPAID, status: USER_STATUS.NORMAL
+        },
+        currentVehicle: null, currentOrder: null,
+        ridingStartTime: null, ridingTimer: null,
+        smsCode: '', countdownTimer: null,
+        map: null, markers: []
+    };
+
+    // ==================== 页面路由管理器 ====================
+    const PageManager = {
+        show(pageId) {
+            console.log('🔄 页面跳转:', pageId);
+
+            // 强制清理所有页面状态
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+                page.style.display = 'none';
+            });
+
+            // 显示目标页面
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                targetPage.style.display = 'block';
+                console.log('✅ 成功显示页面:', pageId);
+
+                // 如果是地图页，初始化真实地图
+                if (pageId === 'mapPage' && !window.map) {
+                    setTimeout(() => {
+                        if (document.getElementById('leaflet-map')) {  // 确保DOM已渲染
+                            initRealMap();
+                        }
+                    }, 100);
+                }
+            } else {
+                console.error('❌ 页面未找到:', pageId);
+            }
+        },
+        showScanModal() {
+            document.getElementById('scanModal').classList.add('active');
+            setTimeout(() => {
+                this.simulateScan();
+            }, 2000);
+        },
+        hideScanModal() {
+            document.getElementById('scanModal').classList.remove('active');
+        },
+        showLoading() {
+            document.getElementById('loading').classList.add('active');
+        },
+        hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+        },
+        showToast(msg, duration = 2000) {
+            console.log('💬 Toast:', msg);
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        },
+        simulateScan() {
+            const mockVehicle = {
+                id: 'E002',
+                type: VEHICLE_TYPE.EBike,
+                battery: 85,
+                location: { lat: 39.9, lng: 116.4 }
+            };
+
+            setTimeout(() => {
+                this.hideScanModal();
+                this.showToast('扫描成功！');
+                setTimeout(() => {
+                    PageManager.unlockVehicle(mockVehicle)
+                }, 1000);
+            }, 2000);
+        },
+
+        async unlockVehicle(vehicle) {
+
+            console.log('🔓 开始开锁流程，车辆:', vehicle);
+            AppState.currentVehicle = vehicle;
+            // 1. 用户状态校验
+            if (AppState.user.status === USER_STATUS.BLACKLIST) {
+                PageManager.showToast('账号已被列入黑名单，无法用车');
+                return;
+            }
+            if (AppState.user.status === USER_STATUS.FROZEN) {
+                PageManager.showToast('账号已被冻结，信用分需≥500');
+                return;
+            }
+
+            // 2. 信用分门槛校验（即时用车需≥500）
+            if (!AppState.user || AppState.user.creditScore < 500) {
+                PageManager.showToast(`信用分${AppState.user?.creditScore}，需≥500才能用车`);
+                return;
+            }
+
+            // 3. 押金检查
+            const depositCheck = DepositManager.checkDepositStatus(AppState.user, vehicle);
+            if (!depositCheck.canUnlock && depositCheck.requiredAmount) {
+                DepositManager.showDepositPage(depositCheck.requiredAmount, vehicle);
+                return;
+            }
+
+            // 4. 电量检查（必须≥20%）
+            if (vehicle.battery < 20) {
+                PageManager.showToast('车辆电量不足20%，请选择其他车辆');
+                return;
+            }
+
+            // 5. 预约占用检查
+            if (vehicle.status === VEHICLE_STATUS.RESERVED) {
+                PageManager.showToast('该车已被其他用户预约');
+                return;
+            }
+
+            // 6. IoT开锁指令下发（30秒超时）
+            PageManager.showLoading();
+            try {
+                // 模拟IoT通信（实际需调用真实API）
+                await IoTService.sendUnlockCommand(vehicle.id);
+
+                // 7. 创建订单（orderID格式为年月日时分秒+6位随机）
+                AppState.currentOrder = {
+                    orderId: generateOrderId(),
+                    userId: AppState.user.userId,
+                    vehicleId: vehicle.id,
+                    startTime: new Date(),
+                    status: ORDER_STATUS.RIDING,
+                    vehicleType: vehicle.type
+                };
+
+                // 8. 开始轨迹上报
+                TrajectoryService.startReporting(AppState.currentOrder.orderId);
+
+                PageManager.hideLoading();
+                AppState.ridingStartTime = new Date();
+                PageManager.show('ridingPage');
+                setTimeout(() => startRidingTimer(), 300);
+
+            } catch (error) {
+                PageManager.hideLoading();
+                PageManager.showToast('开锁失败：' + error.message);
+                // 失败自动退款
+                PaymentService.refundDeposit();
+            }
+        }
+    };
+    // ==================== 验证码管理器 ====================
+    const SMSManager = {
+        sendCode(phone) {
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            AppState.smsCode = code;
+            console.log(`📱 验证码已生成: ${code}`);
+            return code;
+        },
+        verifyCode(inputCode) {
+            const result = inputCode === AppState.smsCode;
+            console.log('验证码验证:', {
+                输入: inputCode,
+                系统: AppState.smsCode,
+                结果: result ? '通过' : '失败'
+            });
+            return result;
+        },
+        saveCountdownState(phone, startTime) {
+            const key = `sms_countdown_${phone}`;
+            localStorage.setItem(key, startTime.toString());
+        },
+        restoreCountdownState(phone) {
+            const key = `sms_countdown_${phone}`;
+            const startTime = localStorage.getItem(key);
+
+            if (startTime) {
+                const elapsed = Math.floor((Date.now() - parseInt(startTime)) / 1000);
+                const remaining = 60 - elapsed;
+
+                return remaining > 0 ? remaining : 0;
+            }
+            return 0;
+        },
+        clearCountdownState(phone) {
+            const key = `sms_countdown_${phone}`;
+            localStorage.removeItem(key);
+        }
+    };
+    // ==================== 押金管理器 ====================
+    const DepositManager = {
+        // 计算所需押金
+        calculateDeposit(vehicleType, creditScore) {
+            if (creditScore >= 650) {
+                return { required: false, amount: 0 }; // 免押
+            }
+
+            const amounts = {
+                [VEHICLE_TYPE.BICYCLE]: 29,
+                [VEHICLE_TYPE.EBike]: 99,
+                [VEHICLE_TYPE.CAR]: 199
+            };
+
+            return {
+                required: true,
+                amount: amounts[vehicleType] || 0
+            };
+        },
+
+        // 检查押金状态
+        checkDepositStatus(user, vehicle) {
+            const deposit = this.calculateDeposit(vehicle.type, user.creditScore);
+
+            if (!deposit.required) {
+                return { canUnlock: true, message: '已免押金' };
+            }
+
+            if (user.depositStatus === DEPOSIT_STATUS.PAID) {
+                return { canUnlock: true, message: '押金已缴' };
+            }
+
+            return {
+                canUnlock: false,
+                message: `需缴纳押金¥${deposit.amount}`,
+                requiredAmount: deposit.amount
+            };
+        },
+
+        // 显示押金支付页面
+        showDepositPage(amount, vehicle) {
+            const modal = document.createElement('div');
+            modal.id = 'depositModal';
+            modal.innerHTML = `
+        <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;">
+            <div style="background:white;padding:32px;border-radius:12px;width:90%;max-width:300px;">
+                <h3 style="margin-bottom:20px;">缴纳押金</h3>
+                <p style="color:#666;margin-bottom:24px;">您需要缴纳押金 ¥${amount}</p>
+                <button id="payDepositBtn" class="btn-primary">立即支付</button> <!-- ✅ 添加ID -->
+                <button class="btn-secondary" style="margin-top:12px;" onclick="document.getElementById('depositModal').remove()">取消</button>
+            </div>
+        </div>
+    `;
+
+            document.body.appendChild(modal);
+
+            modal.querySelector('#payDepositBtn').addEventListener('click', function() {
+                DepositManager.payDeposit(amount, this, vehicle);
+            });
+        },
+
+        // 模拟支付押金
+        payDeposit(amount, btn, vehicle) {
+            btn.disabled = true;
+            btn.textContent = '支付中...';
+
+            setTimeout(() => {
+                AppState.user.depositStatus = DEPOSIT_STATUS.PAID;
+
+                const modal = document.getElementById('depositModal');
+                if (modal) modal.remove();
+
+                PageManager.showToast('押金支付成功！');
+
+                this.completeUnlockAfterDeposit(vehicle);
+            }, 1500);
+        },
+        completeUnlockAfterDeposit(vehicle) {
+            PageManager.showLoading();
+
+            try {
+                AppState.currentVehicle = vehicle;
+                // 直接创建订单
+                AppState.currentOrder = {
+                    orderId: generateOrderId(),
+                    userId: AppState.user.userId,
+                    vehicleId: vehicle.id,
+                    startTime: new Date(),
+                    status: ORDER_STATUS.RIDING,
+                    vehicleType: vehicle.type
+                };
+
+                // 启动轨迹上报
+                TrajectoryService.startReporting(AppState.currentOrder.orderId);
+
+                PageManager.hideLoading();
+                AppState.ridingStartTime = new Date();
+
+                // ✅ 直接显示骑行页
+                PageManager.show('ridingPage');
+                setTimeout(() => startRidingTimer(), 300);
+
+            } catch (error) {
+                PageManager.hideLoading();
+                PageManager.showToast('开锁失败：' + error.message);
+            }
+        }
+    };
+
+    // ==================== 计费引擎 ====================
+    const BillingService = {
+        // 自行车计费（0.5元/30min，不足按30min，超1h后1元/30min）
+        calculateBikeFee(minutes) {
+            if (minutes <= 30) return 0.5;
+
+            const baseFee = 0.5;
+            const extraMinutes = Math.max(0, minutes - 60);
+            const extraFee = Math.ceil(extraMinutes / 30) * 1;
+
+            return parseFloat((baseFee + extraFee).toFixed(2));
+        },
+
+        // 电动车计费（1元/10min + 0.3元/km）
+        calculateEbikeFee(minutes, distance) {
+            const timeFee = Math.ceil(minutes / 10) * 1;
+            const distanceFee = Math.ceil(distance / 0.3) * 0.3; // 不足0.3km按0.3km
+            return parseFloat((timeFee + distanceFee).toFixed(2));
+        },
+
+        // 小汽车计费（0.8元/min + 1.2元/km + 异地还车费）
+        calculateCarFee(minutes, distance, returnLocation) {
+            const timeFee = minutes * 0.8;
+            const distanceFee = distance * 1.2;
+            let remoteFee = 0;
+
+            // 异地还车费计算（简化为是否跨区）
+            if (returnLocation && returnLocation.isRemote) {
+                remoteFee = 10; // 基础异地费
+                // 超出20km部分：3元/km
+                if (distance > 20) {
+                    remoteFee += (distance - 20) * 3;
+                }
+            }
+
+            return parseFloat((timeFee + distanceFee + remoteFee).toFixed(2));
+        },
+
+        // 主计费入口
+        calculateOrderFee(order) {
+            const duration = (order.endTime - order.startTime) / 1000 / 60; // 分钟
+            const distance = order.distance || 0; // 公里
+
+            switch(order.vehicleType) {
+                case VEHICLE_TYPE.BICYCLE:
+                    return this.calculateBikeFee(duration);
+                case VEHICLE_TYPE.EBike:
+                    return this.calculateEbikeFee(duration, distance);
+                case VEHICLE_TYPE.CAR:
+                    return this.calculateCarFee(duration, distance, order.returnLocation);
+                default:
+                    return 0;
+            }
+        }
+    };
+
+    // ==================== 信用分服务 ====================
+    const CreditService = {
+        // 更新信用分
+        updateScore(userId, delta, reason) {
+            AppState.user.creditScore += delta;
+
+            // 确保范围在300-900
+            AppState.user.creditScore = Math.max(300, Math.min(900, AppState.user.creditScore));
+
+            // 状态变更检查
+            if (AppState.user.creditScore < 400) {
+                this.blacklistUser(userId);
+            } else if (AppState.user.creditScore < 500) {
+                this.freezeUser(userId);
+            }
+
+            // 记录变动日志
+            this.logScoreChange(userId, delta, reason);
+
+            // 推送通知
+            PageManager.showToast(`信用分${delta > 0 ? '+' : ''}${delta}，当前${AppState.user.creditScore}`);
+        },
+
+        // 冻结账号
+        freezeUser(userId) {
+            AppState.user.status = USER_STATUS.FROZEN;
+            PageManager.showToast('账号已冻结，信用分需恢复至500以上');
+        },
+
+        // 列入黑名单（同步政府平台）
+        blacklistUser(userId) {
+            AppState.user.status = USER_STATUS.BLACKLIST;
+            // 实际应调用后端接口同步至交通局
+            console.warn('用户列入黑名单，需同步至政府平台');
+            PageManager.showToast('信用分过低，已列入黑名单并同步政府系统');
+        },
+
+        // 记录信用分变动
+        logScoreChange(userId, delta, reason) {
+            const log = {
+                userId,
+                delta,
+                newScore: AppState.user.creditScore,
+                reason,
+                timestamp: new Date()
+            };
+            // 发送至后端
+            console.log('信用分变动:', log);
+        }
+    };
+
+
+    // ==================== 用户相关功能 ====================
+    function login() {
+        const phone = document.getElementById('phoneInput').value.trim();
+        const code = document.getElementById('codeInput').value.trim();
+
+        if (!phone || phone.length !== 11) {
+            PageManager.showToast('请输入正确的11位手机号');
+            return;
+        }
+
+        if (!code) {
+            PageManager.showToast('请输入验证码');
+            return;
+        }
+
+        if (!SMSManager.verifyCode(code)) {
+            PageManager.showToast(`验证码错误！正确验证码是: ${AppState.smsCode}`, 3000);
+            document.getElementById('codeInput').value = '';
+            return;
+        }
+
+        PageManager.showLoading();
+        setTimeout(() => {
+            AppState.user = { phone, userId: 'U001' };
+            AppState.isLoggedIn = true;
+
+            // 清理状态
+            AppState.smsCode = '';
+            if (AppState.countdownTimer) {
+                clearInterval(AppState.countdownTimer);
+            }
+            SMSManager.clearCountdownState(phone);
+
+            PageManager.hideLoading();
+
+            // 清理登录页表单
+            document.getElementById('phoneInput').value = '';
+            document.getElementById('codeInput').value = '';
+            document.getElementById('getCodeBtn').disabled = false;
+            document.getElementById('getCodeBtn').textContent = '获取验证码';
+
+            if (!localStorage.getItem('isAuthenticated')) {
+                PageManager.show('authPage');
+            } else {
+                PageManager.show('mapPage');
+            }
+        }, 1000);
+    }
+
+    function wechatLogin() {
+        PageManager.showLoading();
+        setTimeout(() => {
+            AppState.user = { userId: 'U001', openid: 'wx123' };
+            AppState.isLoggedIn = true;
+
+            if (!localStorage.getItem('isAuthenticated')) {
+                PageManager.hideLoading();
+                PageManager.show('authPage');
+            } else {
+                PageManager.hideLoading();
+                PageManager.show('mapPage');
+            }
+        }, 1000);
+    }
+
+    function logout() {
+        if (confirm('确定要退出登录吗？')) {
+            AppState.user = null;
+            AppState.isLoggedIn = false;
+            localStorage.removeItem('isAuthenticated');
+            SMSManager.clearCountdownState(document.getElementById('phoneInput').value);
+            PageManager.show('loginPage');
+        }
+    }
+
+    // ==================== 地图相关功能 ====================
+    function initRealMap() {
+        if (window.map) return;
+
+        // 初始化Leaflet地图
+        window.map = L.map('leaflet-map').setView([39.9042, 116.4074], 13); // 北京天安门
+
+        // 添加OpenStreetMap瓦片层
+        L.tileLayer('https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+            attribution: '© 高德地图',
+            maxZoom: 18
+        }).addTo(window.map);
+
+        // 加载电子围栏（GeoJSON格式）
+        loadElectronicFences();
+
+        // 添加车辆标记
+        addVehicleMarkers();
+
+        console.log('✅ Leaflet地图初始化完成');
+    }
+    function addVehicleMarkers() {
+        const vehicles = [
+            // 自行车 (绿色)
+            { id: 'B001', type: VEHICLE_TYPE.BICYCLE, lng: 116.4074, lat: 39.9042, battery: 100, status: VEHICLE_STATUS.NORMAL },
+            { id: 'B002', type: VEHICLE_TYPE.BICYCLE, lng: 116.4100, lat: 39.9100, battery: 85, status: VEHICLE_STATUS.NORMAL },
+            { id: 'B003', type: VEHICLE_TYPE.BICYCLE, lng: 116.4050, lat: 39.8980, battery: 92, status: VEHICLE_STATUS.NORMAL },
+            { id: 'B004', type: VEHICLE_TYPE.BICYCLE, lng: 116.4200, lat: 39.9080, battery: 78, status: VEHICLE_STATUS.NORMAL },
+            { id: 'B005', type: VEHICLE_TYPE.BICYCLE, lng: 116.3950, lat: 39.9000, battery: 65, status: VEHICLE_STATUS.NORMAL },
+            { id: 'B006', type: VEHICLE_TYPE.BICYCLE, lng: 116.4300, lat: 39.8950, battery: 88, status: VEHICLE_STATUS.NORMAL },
+
+            // 电动车 (黄色)
+            { id: 'E002', type: VEHICLE_TYPE.EBike, lng: 116.4174, lat: 39.9142, battery: 85, status: VEHICLE_STATUS.NORMAL },
+            { id: 'E003', type: VEHICLE_TYPE.EBike, lng: 116.4250, lat: 39.9050, battery: 72, status: VEHICLE_STATUS.NORMAL },
+            { id: 'E004', type: VEHICLE_TYPE.EBike, lng: 116.4150, lat: 39.9200, battery: 60, status: VEHICLE_STATUS.NORMAL },
+            { id: 'E005', type: VEHICLE_TYPE.EBike, lng: 116.4080, lat: 39.8900, battery: 95, status: VEHICLE_STATUS.NORMAL },
+            { id: 'E006', type: VEHICLE_TYPE.EBike, lng: 116.4350, lat: 39.9120, battery: 45, status: VEHICLE_STATUS.LOW_BATTERY },
+
+            // 小汽车 (红色)
+            { id: 'C003', type: VEHICLE_TYPE.CAR, lng: 116.3974, lat: 39.8942, battery: 90, status: VEHICLE_STATUS.NORMAL },
+            { id: 'C004', type: VEHICLE_TYPE.CAR, lng: 116.4180, lat: 39.9180, battery: 85, status: VEHICLE_STATUS.NORMAL },
+            { id: 'C005', type: VEHICLE_TYPE.CAR, lng: 116.4050, lat: 39.8850, battery: 78, status: VEHICLE_STATUS.NORMAL },
+            { id: 'C006', type: VEHICLE_TYPE.CAR, lng: 116.4280, lat: 39.9020, battery: 92, status: VEHICLE_STATUS.NORMAL }
+        ];
+
+        vehicles.forEach(vehicle => {
+            // 创建自定义图标
+            const iconColor = vehicle.type === VEHICLE_TYPE.BICYCLE ? '#52c41a'
+                : vehicle.type === VEHICLE_TYPE.EBike ? '#faad14'
+                    : '#f5222d';
+
+            // 状态标记
+            const statusText = vehicle.status === VEHICLE_STATUS.LOW_BATTERY ? '电量不足' : '可租用';
+
+            const icon = L.divIcon({
+                html: `<div style="background:${iconColor};width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 3px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:13px;">${vehicle.battery}%</div>`,
+                className: 'custom-marker',
+                iconSize: [42, 42],      // ✅ 增大容器
+                iconAnchor: [21, 21]
+            });
+
+            const marker = L.marker([vehicle.lat, vehicle.lng], { icon })
+                .addTo(window.map)
+                .bindPopup(`<b>车辆${vehicle.id}</b><br>电量: ${vehicle.battery}%`);
+
+            marker.on('click', () => selectVehicle(vehicle.id));
+        });
+    }
+    function locateMe() {
+        PageManager.showToast('正在定位...');
+
+        if (!navigator.geolocation) {
+            PageManager.showToast('浏览器不支持定位');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // 设置地图中心
+                window.map.setView([lat, lng], 16);
+
+                // 添加定位标记
+                L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        html: '<div style="background:#4A90E2;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>',
+                        className: 'location-marker',
+                        iconSize: [26, 26],
+                        iconAnchor: [13, 13]
+                    })
+                }).addTo(window.map)
+                    .bindPopup('当前位置')
+                    .openPopup();
+
+                PageManager.showToast('定位成功');
+            },
+            (error) => {
+                PageManager.showToast('定位失败：' + error.message);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }
+
+    function selectVehicle(vehicleId) {
+        const vehicles = {
+            'B001': { type: '自行车', battery: 100, fee: '0.5元/30分钟' },
+            'E002': { type: '电动车', battery: 85, fee: '1元/10分钟+0.3元/km' },
+            'C003': { type: '小汽车', battery: 90, fee: '0.8元/分钟+1.2元/km' }
+        };
+
+        const vehicle = vehicles[vehicleId];
+        if (vehicle) {
+            AppState.currentVehicle = { id: vehicleId, ...vehicle };
+            if (confirm(`选择${vehicle.type}？\n费用：${vehicle.fee}\n电量：${vehicle.battery}%`)) {
+                PageManager.unlockVehicle(vehicle);
+            }
+        }
+    }
+
+
+    // ==================== 车辆解锁功能 ====================
+    function openScan() {
+        PageManager.showScanModal();
+    }
+
+    function closeScan() {
+        PageManager.hideScanModal();
+    }
+
+    function tempLock() {
+        PageManager.showToast('临时锁车成功，继续计费');
+    }
+
+    async function finishRide() {
+        if (!confirm('确定要结束骑行吗？')) return;
+
+        // ✅ 防御性检查
+        if (!AppState.currentVehicle) {
+            console.error('❌ currentVehicle 为空');
+            PageManager.showToast('车辆状态异常，请重试');
+            return;
+        }
+        PageManager.showLoading();
+
+        try {
+            const vehicleId = AppState.currentVehicle.id;
+            // 1. 检查电子围栏（GPS+北斗误差≤10m）
+            const currentPos = await getCurrentPosition();
+            const inFence = await GeoService.checkElectronicFence(currentPos.lat, currentPos.lng);
+
+            if (!inFence) {
+                // 首次警告，二次起加收调度费
+                const violationCount = getUserViolationCount(AppState.user.userId);
+                const dispatchFee = violationCount === 0 ? 0 : 10;
+
+                if (dispatchFee > 0) {
+                    DepositManager.showDepositPage(dispatchFee, () => {
+                        PageManager.unlockVehicle(AppState.currentVehicle);
+                    });
+                    return;
+                } else {
+                    PageManager.showToast('未在规范停放点，首次警告');
+                }
+
+                // 创建违停记录
+                ViolationService.createViolation({
+                    orderId: AppState.currentOrder.orderId,
+                    userId: AppState.user.userId,
+                    vioType: VIOLATION_TYPE.ILLEGAL_PARK,
+                    penalty: dispatchFee,
+                    creditDelta: -20
+                });
+
+                // 信用分扣减
+                CreditService.updateScore(AppState.user.userId, -20, '违停');
+            }
+
+            // 2. 计算最终费用
+            AppState.currentOrder.endTime = new Date();
+            AppState.currentOrder.distance = calculateRidingDistance();
+            const finalFee = BillingService.calculateOrderFee(AppState.currentOrder);
+            AppState.currentOrder.fee = finalFee;
+
+            // 3. 车辆状态重置
+            VehicleService.updateStatus(vehicleId, VEHICLE_STATUS.NORMAL);
+
+            // 4. 停止计费与轨迹上报
+            clearInterval(AppState.ridingTimer);
+            TrajectoryService.stopReporting();
+
+            PageManager.hideLoading();
+
+            // 5. 显示账单
+            showPaymentPage(AppState.currentOrder);
+
+        } catch (error) {
+            PageManager.hideLoading();
+            PageManager.showToast('还车失败：' + error.message);
+        }
+    }
+    function goToDeposit() {
+        const status = AppState.user.depositStatus;
+        if (status === DEPOSIT_STATUS.PAID) {
+            PageManager.showToast('押金已缴纳');
+        } else if (status === DEPOSIT_STATUS.REFUNDED) {
+            PageManager.showToast('押金已退还');
+        } else {
+            PageManager.showToast('您当前无需缴纳押金（信用分≥650）');
+        }
+    }
+    // 显示支付页面
+    function showPaymentPage(order) {
+        const modal = document.createElement('div');
+        modal.id = 'paymentModal';
+        modal.innerHTML = `
+        <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;">
+            <div style="background:white;padding:32px;border-radius:12px;width:90%;max-width:320px;">
+                <h3 style="margin-bottom:20px;">行程结束</h3>
+                <div style="margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                        <span>时长费</span><span>¥${order.fee}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;color:#999;font-size:14px;">
+                        <span>用时${Math.floor((order.endTime - order.startTime)/60000)}分钟</span>
+                        <span>距离${order.distance || 0}km</span>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="PaymentService.payOrder('${order.orderId}')">立即支付</button>
+                <button class="btn-secondary" style="margin-top:12px;" onclick="this.closest('div').remove()">取消</button>
+            </div>
+        </div>
+    `;
+        document.body.appendChild(modal);
+    }
+
+    // ==================== 骑行计时器 ====================
+    function startRidingTimer() {
+        AppState.ridingTimer = setInterval(() => {
+            const now = new Date();
+            const elapsed = Math.floor((now - AppState.ridingStartTime) / 1000);
+
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('ridingTime').textContent =
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            const fee = (minutes * 0.1 + Math.random() * 0.5).toFixed(2);
+            document.getElementById('ridingFee').textContent = `¥${fee}`;
+        }, 1000);
+    }
+
+    // ==================== 实名认证功能 ====================
+    function uploadIdCard() {
+        PageManager.showToast('请选择身份证照片');
+        setTimeout(() => {
+            PageManager.showToast('OCR识别成功');
+        }, 2000);
+    }
+
+    function startFaceVerify() {
+        console.log('🔍 点击了人脸识别按钮');
+
+        const btn = document.querySelector('#authPage .btn-primary');
+        if (btn.disabled) return;
+        btn.disabled = true;
+
+        PageManager.showToast('正在启动人脸识别...');
+        console.log('步骤1：启动人脸识别提示已显示');
+
+        setTimeout(() => {
+            PageManager.showToast('真人检测成功，正在比对公安库...');
+            console.log('步骤2：活体检测完成，进入公安库比对');
+
+            setTimeout(() => {
+                console.log('步骤3：公安库比对完成');
+
+                localStorage.setItem('isAuthenticated', 'true');
+                AppState.creditScore = 650;
+                console.log('✅ 实名认证状态已保存到 localStorage');
+
+                PageManager.showToast('实名认证成功！1秒后跳转到首页');
+                console.log('步骤4：显示成功提示，准备跳转');
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    PageManager.show('mapPage');
+                    PageManager.showToast('欢迎开始您的共享出行！');
+                    console.log('🎉 已跳转到地图首页');
+                }, 1000);
+
+            }, 2000);
+        }, 1000);
+    }
+
+    // ==================== 导航功能 ====================
+    function goToProfile() {
+        PageManager.show('profilePage');
+        document.getElementById('creditScore').textContent = AppState.creditScore;
+    }
+
+    function backToMap() {
+        PageManager.show('mapPage');
+    }
+
+    function goToOrders() {
+        PageManager.showToast('我的行程功能开发中');
+    }
+
+    function goToCoupons() {
+        PageManager.showToast('优惠券功能开发中');
+    }
+
+    function goToWallet() {
+        PageManager.showToast('钱包功能开发中');
+    }
+
+    function goToCredit() {
+        PageManager.showToast('信用分功能开发中');
+    }
+
+    // ==================== 倒计时函数 ====================
+    function startCountdown(seconds) {
+        const btn = document.getElementById('getCodeBtn');
+        if (!btn) return;
+
+        let count = seconds;
+        if (AppState.countdownTimer) {
+            clearInterval(AppState.countdownTimer);
+        }
+
+        btn.disabled = true;
+        btn.textContent = `${count}秒后重试`;
+
+        AppState.countdownTimer = setInterval(() => {
+            count--;
+            btn.textContent = `${count}秒后重试`;
+
+            if (count <= 0) {
+                clearInterval(AppState.countdownTimer);
+                btn.disabled = false;
+                btn.textContent = '获取验证码';
+
+                const phone = document.getElementById('phoneInput')?.value;
+                if (phone) {
+                    SMSManager.clearCountdownState(phone);
+                }
+            }
+        }, 1000);
+    }
+
+    // ==================== IoT设备通信服务 ====================
+    const IoTService = {
+        // 发送开锁指令（文档：30秒超时）
+        async sendUnlockCommand(vehicleId) {
+            return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject(new Error('开锁超时（30秒）'));
+                }, 30000);
+
+                // 模拟MQTT/NB-IoT通信
+                setTimeout(() => {
+                    clearTimeout(timeout);
+                    const success = Math.random() > 0.1; // 90%成功率
+                    if (success) {
+                        resolve(true);
+                    } else {
+                        reject(new Error('车辆无响应'));
+                    }
+                }, 2000 + Math.random() * 3000);
+            });
+        },
+
+        // 发送锁车指令
+        async sendLockCommand(vehicleId) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve(true);
+                }, 1000);
+            });
+        }
+    };
+
+    // ==================== 模拟服务桩（Stub）====================
+    // 电子围栏服务
+    function loadElectronicFences() {
+        if (!window.map) return;
+
+        // 模拟电子围栏数据（GeoJSON格式）
+        const fenceData = {
+            type: "FeatureCollection",
+            features: [
+                {
+                    type: "Feature",
+                    properties: { name: "规范停车区A", type: "allowed" },
+                    geometry: {
+                        type: "Polygon",
+                        coordinates: [[
+                            [116.3974, 39.9042],
+                            [116.4074, 39.9042],
+                            [116.4074, 39.9142],
+                            [116.3974, 39.9142],
+                            [116.3974, 39.9042]
+                        ]]
+                    }
+                }
+            ]
+        };
+
+        // 在地图上绘制电子围栏（绿色区域）
+        L.geoJSON(fenceData, {
+            style: {
+                color: '#52c41a',
+                weight: 2,
+                opacity: 0.8,
+                fillColor: '#52c41a',
+                fillOpacity: 0.1
+            }
+        }).addTo(window.map);
+
+        console.log('✅ 电子围栏加载完成');
+    }
+
+    // 地理位置服务
+    const GeoService = {
+        async checkElectronicFence(lat, lng) {
+            // 模拟检查：随机返回是否在围栏内（90%概率在范围内）
+            return Math.random() > 0.1;
+        }
+    };
+
+    // 违停记录服务
+    const ViolationService = {
+        createViolation(violation) {
+            console.log('🚫 违停记录:', violation);
+            // 模拟存储到后端
+            localStorage.setItem(`violation_${violation.orderId}`, JSON.stringify(violation));
+        }
+    };
+
+    // 支付服务
+    const PaymentService = {
+        async payOrder(orderId) {
+            PageManager.showLoading();
+            const modal = document.getElementById('paymentModal');
+            setTimeout(() => {
+                PageManager.hideLoading();
+                PageManager.showToast('支付成功！');
+                // 更新订单状态
+                if (AppState.currentOrder) {
+                    AppState.currentOrder.status = ORDER_STATUS.PAID;
+                }
+                if (modal) {
+                    modal.remove();
+                }
+                // ✅ 清理骑行状态并返回地图
+                AppState.currentVehicle = null;
+                AppState.currentOrder = null;
+                AppState.ridingStartTime = null;
+                clearInterval(AppState.ridingTimer);
+                // 返回地图页
+                setTimeout(() => PageManager.show('mapPage'), 1000);
+            }, 1500);
+        },
+
+        refundDeposit() {
+            console.log('💰 押金退款处理中...');
+            PageManager.showToast('押金将在3-7个工作日内原路退回');
+        }
+    };
+
+    // 轨迹上报服务
+    const TrajectoryService = {
+        startReporting(orderId) {
+            console.log(`📍 开始上报轨迹: ${orderId}`);
+            // 模拟每5秒上报一次GPS位置
+            this.reportInterval = setInterval(() => {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    console.log(`[${new Date().toISOString()}] 位置: ${pos.coords.latitude}, ${pos.coords.longitude}`);
+                });
+            }, 5000);
+        },
+
+        stopReporting() {
+            if (this.reportInterval) {
+                clearInterval(this.reportInterval);
+                console.log('📍 停止轨迹上报');
+            }
+        }
+    };
+
+    // 车辆服务
+    const VehicleService = {
+        updateStatus(vehicleId, status) {
+            console.log(`🚲 车辆${vehicleId}状态更新为: ${status}`);
+        }
+    };
+
+    // 获取用户违停次数
+    function getUserViolationCount(userId) {
+        const violations = Object.keys(localStorage).filter(key => key.startsWith('violation_'));
+        return violations.length;
+    }
+
+    // ==================== 工具函数 ====================
+    // 生成订单ID（文档：年月日时分秒+6位随机）
+    function generateOrderId() {
+        const date = new Date();
+        const dateStr = date.getFullYear().toString() +
+            String(date.getMonth() + 1).padStart(2, '0') +
+            String(date.getDate()).padStart(2, '0') +
+            String(date.getHours()).padStart(2, '0') +
+            String(date.getMinutes()).padStart(2, '0') +
+            String(date.getSeconds()).padStart(2, '0');
+        const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+        return `ORD${dateStr}${random}`;
+    }
+
+    // 获取当前位置（Promise封装）
+    function getCurrentPosition() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('浏览器不支持定位'));
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => resolve({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                    accuracy: position.coords.accuracy
+                }),
+                (error) => reject(error),
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        });
+    }
+
+    // 计算骑行距离（模拟）
+    function calculateRidingDistance() {
+        // 实际应通过轨迹点累加
+        return (Math.random() * 5 + 1).toFixed(1); // 模拟1-6km
+    }
+    // ==================== 初始化 ====================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 应用初始化完成');
+
+        const phoneInput = document.getElementById('phoneInput');
+        const getCodeBtn = document.getElementById('getCodeBtn');
+        const codeInput = document.getElementById('codeInput');
+        const pages = document.querySelectorAll('.page');
+
+        // 清理页面状态
+        pages.forEach(page => {
+            page.classList.remove('active');
+            page.style.display = 'none';
+        });
+
+        // 显示登录页
+        PageManager.show('loginPage');
+
+        // 手机号输入格式化
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                e.target.value = value;
+            });
+
+            // 修复blur事件：使用已声明的getCodeBtn变量
+            phoneInput.addEventListener('blur', function() {
+                const phone = this.value.trim();
+                if (phone.length === 11) {
+                    const remaining = SMSManager.restoreCountdownState(phone);
+                    if (remaining > 0) {
+                        startCountdown(remaining);
+                        if (getCodeBtn) getCodeBtn.disabled = true; // ✅ 使用已声明的变量
+                    }
+                }
+            });
+        }
+
+        // 验证码按钮事件
+        if (getCodeBtn) {
+            getCodeBtn.addEventListener('click', function() {
+                const phone = phoneInput.value.trim();
+                if (!phone || phone.length !== 11) {
+                    PageManager.showToast('请输入正确的11位手机号');
+                    return;
+                }
+
+                if (this.disabled) return;
+
+                SMSManager.sendCode(phone);
+                codeInput.value = AppState.smsCode; // 测试环境自动填充
+                SMSManager.saveCountdownState(phone, Date.now());
+
+                PageManager.showToast('验证码已发送');
+                startCountdown(60);
+            });
+        }
+
+        // 底部导航事件
+        document.querySelectorAll('.bottom-nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const target = this.dataset.target;
+                if (target === 'map') {
+                    PageManager.show('mapPage');
+                } else if (target === 'profile') {
+                    goToProfile();
+                }
+                document.querySelectorAll('.bottom-nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    });
+
+
+</script>
+
+</body>
+</html>
